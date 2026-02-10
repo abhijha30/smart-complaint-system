@@ -2,15 +2,21 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Smart Complaint System</title>
-<link href="style.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
 <script>
-const API_URL = "/api"; // serverless route
+const API_URL = "/api";
 
 async function submitComplaint() {
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    const complaint = document.getElementById("complaint").value;
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const complaint = document.getElementById("complaint").value.trim();
+
+    if(!name || !email || !complaint) {
+        alert("All fields are required!");
+        return;
+    }
 
     const res = await fetch(`${API_URL}/submit`, {
         method: "POST",
@@ -23,14 +29,15 @@ async function submitComplaint() {
 }
 </script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-<div class="bg-white p-6 rounded shadow-md w-full max-w-md">
-    <h1 class="text-2xl font-bold mb-4 text-center">Submit Your Complaint</h1>
-    <form id="form" onsubmit="event.preventDefault(); submitComplaint();">
-        <input type="text" id="name" placeholder="Your Name" class="w-full p-2 mb-3 border rounded" required/>
-        <input type="email" id="email" placeholder="Your Email" class="w-full p-2 mb-3 border rounded" required/>
-        <textarea id="complaint" placeholder="Your Complaint" class="w-full p-2 mb-3 border rounded h-32" required></textarea>
-        <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Submit</button>
+<body class="bg-gradient-to-b from-indigo-50 to-white min-h-screen flex items-center justify-center p-4">
+<div class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg">
+    <h1 class="text-3xl font-bold text-indigo-700 mb-6 text-center">Submit Your Complaint</h1>
+    <p class="text-gray-500 mb-6 text-center">We value your feedback. Please let us know your issue in detail.</p>
+    <form id="form" onsubmit="event.preventDefault(); submitComplaint();" class="space-y-4">
+        <input type="text" id="name" placeholder="Full Name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400" required>
+        <input type="email" id="email" placeholder="Email Address" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400" required>
+        <textarea id="complaint" placeholder="Write your complaint here..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 h-36 resize-none" required></textarea>
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition duration-300">Submit Complaint</button>
     </form>
 </div>
 </body>
