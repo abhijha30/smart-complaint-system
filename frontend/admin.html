@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Admin Panel</title>
 <script>
-const API_URL = "https://your-backend-url.vercel.app";
+const API_URL = "/api"; // serverless route
 
 async function fetchComplaints() {
     const start = document.getElementById("start").value;
@@ -12,16 +12,13 @@ async function fetchComplaints() {
     const user = prompt("Admin Username");
     const pass = prompt("Admin Password");
     const res = await fetch(`${API_URL}/admin/complaints?start=${start}&end=${end}`, {
-        headers: {
-            "Authorization": "Basic " + btoa(user + ":" + pass)
-        }
+        headers: { "Authorization": "Basic " + btoa(user + ":" + pass) }
     });
     const data = await res.json();
     const table = document.getElementById("table");
     table.innerHTML = "<tr><th>ID</th><th>Name</th><th>Email</th><th>Complaint</th><th>Date</th></tr>";
     data.data.forEach(c => {
-        const row = `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.email}</td><td>${c.complaint}</td><td>${c.created_at}</td></tr>`;
-        table.innerHTML += row;
+        table.innerHTML += `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.email}</td><td>${c.complaint}</td><td>${c.created_at}</td></tr>`;
     });
 }
 
