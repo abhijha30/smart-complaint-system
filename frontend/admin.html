@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<script>
+const API_URL = "https://your-backend-url.vercel.app";
+
+async function fetchComplaints() {
+    const start = document.getElementById("start").value;
+    const end = document.getElementById("end").value;
+    const user = prompt("Admin Username");
+    const pass = prompt("Admin Password");
+    const res = await fetch(`${API_URL}/admin/complaints?start=${start}&end=${end}`, {
+        headers: {
+            "Authorization": "Basic " + btoa(user + ":" + pass)
+        }
+    });
+    const data = await res.json();
+    const table = document.getElementById("table");
+    table.innerHTML = "<tr><th>ID</th><th>Name</th><th>Email</th><th>Complaint</th><th>Date</th></tr>";
+    data.data.forEach(c => {
+        const row = `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.email}</td><td>${c.complaint}</td><td>${c.created_at}</td></tr>`;
+        table.innerHTML += row;
+    });
+}
+
+function downloadExcel() {
+    const start = document.getElementById("start").value;
+    const end = document.getElementById("end").value;
+    const user = prompt("Admin Username");
+    const pass = prompt("Admin Password");
+    window.location.href = `${API_URL}/admin/download?start=${start}&end=${end}`;
+}
+</script>
+</head>
+<body>
+<h1>Admin Panel</h1>
+Start Date: <input type="date" id="start"/>
+End Date: <input type="date" id="end"/>
+<button onclick="fetchComplaints()">Filter</button>
+<button onclick="downloadExcel()">Download Excel</button>
+<table id="table" border="1"></table>
+</body>
+</html>
