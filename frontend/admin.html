@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <title>Admin Panel</title>
+<link href="style.css" rel="stylesheet">
 <script>
-const API_URL = "/api"; // serverless route
+const API_URL = "/api";
 
 async function fetchComplaints() {
     const start = document.getElementById("start").value;
@@ -16,9 +17,9 @@ async function fetchComplaints() {
     });
     const data = await res.json();
     const table = document.getElementById("table");
-    table.innerHTML = "<tr><th>ID</th><th>Name</th><th>Email</th><th>Complaint</th><th>Date</th></tr>";
+    table.innerHTML = "<tr class='bg-gray-200'><th>ID</th><th>Name</th><th>Email</th><th>Complaint</th><th>Date</th></tr>";
     data.data.forEach(c => {
-        table.innerHTML += `<tr><td>${c.id}</td><td>${c.name}</td><td>${c.email}</td><td>${c.complaint}</td><td>${c.created_at}</td></tr>`;
+        table.innerHTML += `<tr class="text-sm"><td>${c.id}</td><td>${c.name}</td><td>${c.email}</td><td>${c.complaint}</td><td>${c.created_at}</td></tr>`;
     });
 }
 
@@ -31,12 +32,18 @@ function downloadExcel() {
 }
 </script>
 </head>
-<body>
-<h1>Admin Panel</h1>
-Start Date: <input type="date" id="start"/>
-End Date: <input type="date" id="end"/>
-<button onclick="fetchComplaints()">Filter</button>
-<button onclick="downloadExcel()">Download Excel</button>
-<table id="table" border="1"></table>
+<body class="bg-gray-100 min-h-screen p-4">
+<div class="max-w-4xl mx-auto bg-white p-6 rounded shadow-md">
+    <h1 class="text-2xl font-bold mb-4 text-center">Admin Panel</h1>
+    <div class="flex flex-col md:flex-row gap-2 mb-4">
+        <input type="date" id="start" class="p-2 border rounded"/>
+        <input type="date" id="end" class="p-2 border rounded"/>
+        <button onclick="fetchComplaints()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Filter</button>
+        <button onclick="downloadExcel()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Download Excel</button>
+    </div>
+    <div class="overflow-x-auto">
+        <table id="table" class="w-full border border-gray-300"></table>
+    </div>
+</div>
 </body>
 </html>
