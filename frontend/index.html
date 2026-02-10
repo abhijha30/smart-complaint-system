@@ -13,26 +13,29 @@ async function submitComplaint() {
     const email = document.getElementById("email").value.trim();
     const complaint = document.getElementById("complaint").value.trim();
 
-    if(!name || !email || !complaint) {
+    if (!name || !email || !complaint) {
         alert("All fields are required!");
         return;
     }
 
-    const res = await fetch(`${API_URL}/submit`, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ name, email, complaint })
-    });
-    const data = await res.json();
-    alert(data.message);
-    document.getElementById("form").reset();
+    try {
+        const res = await fetch(`${API_URL}/submit`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ name, email, complaint })
+        });
+        const data = await res.json();
+        alert(data.message);  // Proper message, fixes "undefined"
+        document.getElementById("form").reset();
+    } catch (err) {
+        alert("Error submitting complaint. Try again!");
+    }
 }
 </script>
 </head>
 <body class="bg-gradient-to-b from-indigo-50 to-white min-h-screen flex items-center justify-center p-4">
 <div class="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg">
     <h1 class="text-3xl font-bold text-indigo-700 mb-6 text-center">Submit Your Complaint</h1>
-    <p class="text-gray-500 mb-6 text-center">We value your feedback. Please let us know your issue in detail.</p>
     <form id="form" onsubmit="event.preventDefault(); submitComplaint();" class="space-y-4">
         <input type="text" id="name" placeholder="Full Name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400" required>
         <input type="email" id="email" placeholder="Email Address" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400" required>
