@@ -9,28 +9,28 @@ class handler(BaseHTTPRequestHandler):
 
         email = body["email"]
         password = body["password"]
-        action = body["action"]  # login / register
+        action = body.get("action")  # "login" or "register"
 
         if action == "register":
-            role = body.get("role", "user")
+            role = body.get("role","user")
             supabase.table("users").insert({
                 "name": body["name"],
                 "email": email,
                 "password": password,
                 "role": role
             }).execute()
+            self.respond({"message":"Registered Successfully"})
+            return
 
-            self.respond({"message": "Registered Successfully"})
-
-        elif action == "login":
-            res = supabase.table("users").select("*").eq("email", email).eq("password", password).execute()
+        if action == "login":
+            res = supabase.table("users").select("*").eq("email",email).eq("password",password).execute()
             if res.data:
-                self.respond({"message": "Login Success", "role": res.data[0]["role"]})
+                self.respond({"message":"Login Success","role":res.data[0]["role"]})
             else:
-                self.respond({"message": "Invalid Credentials"}, 401)
+                self.respond({"message":"Invalid Credentials"},401)
 
-    def respond(self, data, status=200):
+    def respond(self,data,status=200):
         self.send_response(status)
-        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Type","application/json")
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
