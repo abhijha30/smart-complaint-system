@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Smart Complaint System</title>
 <script>
-const API_URL = "https://your-backend-url.vercel.app";
+const API_URL = "/api"; // Vercel serverless route
 
 async function submitComplaint() {
     const name = document.getElementById("name").value;
@@ -13,7 +13,7 @@ async function submitComplaint() {
 
     const res = await fetch(`${API_URL}/submit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ name, email, complaint })
     });
     const data = await res.json();
