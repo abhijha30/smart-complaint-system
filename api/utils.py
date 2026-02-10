@@ -1,4 +1,6 @@
 from supabase import create_client
+import pandas as pd
+from io import BytesIO
 
 SUPABASE_URL = "https://iawnianxqhimhtwzmmna.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlhd25pYW54cWhpbWh0d3ptbW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MzM0ODYsImV4cCI6MjA4NjMwOTQ4Nn0.8MOrJYZECltksdN53KqeLSzu-bGNTvxSUT3fIDWgRtw"
@@ -14,3 +16,11 @@ def smart_category(text):
     if "wifi" in text or "internet" in text:
         return "IT"
     return "General"
+
+def complaints_to_excel(complaints):
+    df = pd.DataFrame(complaints)
+    df = df[['user_email','title','description','category','status','created_at']]
+    output = BytesIO()
+    df.to_excel(output, index=False)
+    output.seek(0)
+    return output.read()
