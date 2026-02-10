@@ -1,3 +1,4 @@
+# api/index.py
 from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,28 +7,24 @@ import pandas as pd
 from io import BytesIO
 from fastapi.responses import StreamingResponse
 
-# Supabase config
 SUPABASE_URL = "https://iawnianxqhimhtwzmmna.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlhd25pYW54cWhpbWh0d3ptbW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MzM0ODYsImV4cCI6MjA4NjMwOTQ4Nn0.8MOrJYZECltksdN53KqeLSzu-bGNTvxSUT3fIDWgRtw"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Admin credentials
 ADMIN_USER = "admin"
 ADMIN_PASS = "password123"
 
 security = HTTPBasic()
 app = FastAPI()
 
-# CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Replace "*" with your frontend URL in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
 )
 
-# Submit complaint
 @app.post("/submit")
 async def submit_complaint(request: Request):
     data = await request.json()
@@ -43,13 +40,11 @@ async def submit_complaint(request: Request):
     }).execute()
     return {"status": "success", "message": "Complaint submitted successfully"}
 
-# Admin auth
 def verify_admin(credentials: HTTPBasicCredentials = Depends(security)):
     if not (credentials.username == ADMIN_USER and credentials.password == ADMIN_PASS):
         raise HTTPException(status_code=401, detail="Unauthorized")
     return True
 
-# Get complaints
 @app.get("/admin/complaints")
 async def get_complaints(start: str = None, end: str = None, auth: bool = Depends(verify_admin)):
     query = supabase.table("complaints").select("*")
@@ -60,7 +55,6 @@ async def get_complaints(start: str = None, end: str = None, auth: bool = Depend
     res = query.execute()
     return {"data": res.data}
 
-# Download Excel
 @app.get("/admin/download")
 async def download_excel(start: str = None, end: str = None, auth: bool = Depends(verify_admin)):
     query = supabase.table("complaints").select("*")
