@@ -1,92 +1,96 @@
-from fastapi import FastAPI, HTTPException, Depends, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from supabase import create_client, Client
-import pandas as pd
-from io import BytesIO
-from fastapi.responses import StreamingResponse
+from http.server import BaseHTTPRequestHandler
+import json
+from urllib.parse import parse_qs, urlparse
+from supabase import create_client
 
-# -------------------- Supabase Setup --------------------
+# 🔐 SUPABASE CONFIG
 SUPABASE_URL = "https://iawnianxqhimhtwzmmna.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlhd25pYW54cWhpbWh0d3ptbW5hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3MzM0ODYsImV4cCI6MjA4NjMwOTQ4Nn0.8MOrJYZECltksdN53KqeLSzu-bGNTvxSUT3fIDWgRtw"
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# -------------------- Admin Credentials --------------------
-ADMIN_USER = "admin"
-ADMIN_PASS = "password123"
+class handler(BaseHTTPRequestHandler):
 
-security = HTTPBasic()
-app = FastAPI()
+    # ---------- POST REQUESTS ----------
+    def do_POST(self):
+        path = self.path
+        length = int(self.headers.get('Content-Length', 0))
+        body = json.loads(self.rfile.read(length))
 
-# -------------------- CORS --------------------
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Replace "*" with frontend domain in production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+        # 🟢 REGISTER
+        if path == "/api/register":
+            supabase.table("users").insert({
+                "name": body["name"],
+                "email": body["email"],
+                "password": body["password"],
+                "role": body.get("role", "user")
+            }).execute()
 
-# -------------------- Submit Complaint --------------------
-@app.post("/submit")
-async def submit_complaint(request: Request):
-    try:
-        data = await request.json()
-        name = data.get("name")
-        email = data.get("email")
-        complaint = data.get("complaint")
-        if not all([name, email, complaint]):
-            raise HTTPException(status_code=400, detail="All fields are required")
+            return self.respond({"message": "Registered Successfully"})
 
-        supabase.table("complaints").insert({
-            "name": name,
-            "email": email,
-            "complaint": complaint
-        }).execute()
+        # 🟢 LOGIN
+        if path == "/api/login":
+            res = supabase.table("users").select("*")\
+                .eq("email", body["email"])\
+                .eq("password", body["password"])\
+                .execute()
 
-        return {"status": "success", "message": "Complaint submitted successfully!"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+            if res.data:
+                return self.respond({
+                    "message": "Login Success",
+                    "role": res.data[0]["role"]
+                })
+            else:
+                return self.respond({"message": "Invalid Credentials"}, 401)
 
-# -------------------- Admin Authentication --------------------
-def verify_admin(credentials: HTTPBasicCredentials = Depends(security)):
-    if not (credentials.username == ADMIN_USER and credentials.password == ADMIN_PASS):
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    return True
+        # 🟢 SUBMIT COMPLAINT
+        if path == "/api/complaint":
+            supabase.table("complaints").insert({
+                "user_email": body["email"],
+                "title": body["title"],
+                "description": body["description"],
+                "type": body.get("type", "General"),
+                "status": "Pending"
+            }).execute()
 
-# -------------------- Get Complaints --------------------
-@app.get("/admin/complaints")
-async def get_complaints(start: str = None, end: str = None, auth: bool = Depends(verify_admin)):
-    query = supabase.table("complaints").select("*")
-    if start:
-        query = query.gte("created_at", start)
-    if end:
-        query = query.lte("created_at", end)
-    res = query.execute()
-    return {"data": res.data}
+            return self.respond({"message": "Complaint Submitted"})
 
-# -------------------- Download Excel --------------------
-@app.get("/admin/download")
-async def download_excel(start: str = None, end: str = None, auth: bool = Depends(verify_admin)):
-    query = supabase.table("complaints").select("*")
-    if start:
-        query = query.gte("created_at", start)
-    if end:
-        query = query.lte("created_at", end)
-    res = query.execute()
-    df = pd.DataFrame(res.data)
-    if df.empty:
-        df = pd.DataFrame(columns=["id", "name", "email", "complaint", "created_at"])
-    output = BytesIO()
-    df.to_excel(output, index=False)
-    output.seek(0)
-    return StreamingResponse(
-        output,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": "attachment; filename=complaints.xlsx"}
-    )
+    # ---------- GET REQUESTS ----------
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        query = parse_qs(parsed.query)
 
-# -------------------- Local Testing --------------------
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+        # 🟢 USER TRACK COMPLAINT
+        if path == "/api/my-complaints":
+            email = query.get("email", [None])[0]
+
+            res = supabase.table("complaints")\
+                .select("*")\
+                .eq("user_email", email)\
+                .execute()
+
+            return self.respond(res.data)
+
+        # 🟢 ADMIN VIEW ALL
+        if path == "/api/admin/complaints":
+            res = supabase.table("complaints").select("*").execute()
+            return self.respond(res.data)
+
+    # ---------- PUT REQUEST ----------
+    def do_PUT(self):
+        if self.path == "/api/admin/update":
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length))
+
+            supabase.table("complaints").update({
+                "status": body["status"]
+            }).eq("id", body["id"]).execute()
+
+            return self.respond({"message": "Status Updated"})
+
+    # ---------- RESPONSE ----------
+    def respond(self, data, status=200):
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode())
