@@ -1,43 +1,30 @@
-const API = "https://YOUR-VERCEL-BACKEND.vercel.app"; // NO slash at end
+function load(){
+let s=start.value
+let e=end.value
+let t=type.value
 
-document.getElementById("complaintForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+fetch(`/api/admin?start=${s}&end=${e}&type=${t}`)
+.then(r=>r.json())
+.then(d=>{
+let html=""
+d.forEach(c=>{
+html+=`
+<div style="border:1px solid #ccc;margin:10px;padding:10px">
+<b>${c.name}</b> (${c.type})<br>
+${c.title}<br>
+Status: ${c.status}<br>
+<button onclick="update('${c.id}')">Resolve</button>
+</div>
+`
+})
+data.innerHTML=html
+})
+}
 
-  const msg = document.getElementById("msg");
-  msg.innerText = "Submitting complaint...";
+function download(){
+let s=start.value
+let e=end.value
+let t=type.value
 
-  const form = e.target;
-
-  const data = {
-    name: form.name.value.trim(),
-    age: Number(form.age.value),
-    email: form.email.value.trim(),
-    contact: form.contact.value.trim(),
-    designation: form.designation.value.trim(),
-    company: form.company.value.trim(),
-    complaint: form.complaint.value.trim()
-  };
-
-  try {
-    const res = await fetch(API + "/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-
-    if (!res.ok) {
-      throw new Error("Server error");
-    }
-
-    const result = await res.json();
-
-    msg.style.color = "green";
-    msg.innerText = result.message || "Complaint submitted successfully";
-
-    form.reset();
-
-  } catch (error) {
-    msg.style.color = "red";
-    msg.innerText = "Something went wrong. Please try again.";
-  }
-});
+window.open(`/api/admin?start=${s}&end=${e}&type=${t}&download=excel`)
+}
