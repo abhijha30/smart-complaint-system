@@ -1,74 +1,113 @@
-from supabase import create_client
+from http.server import BaseHTTPRequestHandler
 import json
+from supabase import create_client
+from urllib.parse import urlparse, parse_qs
+import pandas as pd
+from io import BytesIO
 
-SUPABASE_URL = "https://pdvotajkxpoyovqgggtq.supabase.co"
+SUPABASE_URL = "https://iawnianxqhimhtwzmmna.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkdm90YWpreHBveW92cWdnZ3RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5ODkzNDgsImV4cCI6MjA4OTU2NTM0OH0.lju-IlKeTbhn6D5jfZh08ePS7s32t1OBFGivt0ZNPpA"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def handler(request, response):
-    try:
-        path = request.path
-        method = request.method
+def smart_category(text):
+    text = text.lower()
+    if "electric" in text:
+        return "Electricity"
+    if "water" in text:
+        return "Water"
+    if "wifi" in text:
+        return "IT"
+    return "General"
 
-        # -------- GET --------
-        if method == "GET":
+class handler(BaseHTTPRequestHandler):
 
-            if path.startswith("/api/track"):
-                cid = request.query.get("id")
-                res = supabase.table("complaints").select("*").eq("id", cid).execute()
-                return response.json(res.data)
+    def do_POST(self):
+        length = int(self.headers['Content-Length'])
+        body = json.loads(self.rfile.read(length))
 
-            if path.startswith("/api/admin"):
-                res = supabase.table("complaints").select("*").execute()
-                return response.json(res.data)
+        action = body.get("action")
 
-        # -------- POST --------
-        if method == "POST":
-            body = request.json()
+        # 🔐 REGISTER
+        if action == "register":
+            supabase.table("users").insert({
+                "name": body["name"],
+                "email": body["email"],
+                "password": body["password"],
+                "role": body.get("role", "user")
+            }).execute()
 
-            if path == "/api/register":
-                supabase.table("users").insert(body).execute()
-                return response.json({"message": "Registered"})
+            return self.respond({"message": "Registered Successfully"})
 
-            if path == "/api/login":
-                res = supabase.table("users").select("*")\
-                    .eq("email", body["email"])\
-                    .eq("password", body["password"]).execute()
+        # 🔑 LOGIN
+        if action == "login":
+            res = supabase.table("users").select("*") \
+                .eq("email", body["email"]) \
+                .eq("password", body["password"]) \
+                .execute()
 
-                if res.data:
-                    return response.json({
-                        "message": "Login Success",
-                        "role": res.data[0]["role"]
-                    })
+            if res.data:
+                return self.respond({
+                    "message": "Login Success",
+                    "role": res.data[0]["role"]
+                })
 
-                return response.json({"message": "Invalid"}, status=401)
+            return self.respond({"message": "Invalid"}, 401)
 
-            if path == "/api/complaint":
-                supabase.table("complaints").insert({
-                    "name": body["name"],
-                    "user_email": body["email"],
-                    "contact": body["contact"],
-                    "title": body["title"],
-                    "description": body["remark"],
-                    "type": body["type"],
-                    "status": "Pending"
-                }).execute()
+        # 📝 SUBMIT COMPLAINT
+        if action == "complaint":
+            category = smart_category(body["description"])
 
-                return response.json({"message": "Submitted"})
+            supabase.table("complaints").insert({
+                "user_email": body["email"],
+                "title": body["title"],
+                "description": body["description"],
+                "category": category,
+                "status": "Pending"
+            }).execute()
 
-        # -------- PUT --------
-        if method == "PUT":
-            body = request.json()
+            return self.respond({"message": "Complaint Submitted"})
 
-            if path == "/api/update":
-                supabase.table("complaints").update({
-                    "status": body["status"]
-                }).eq("id", body["id"]).execute()
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        query = parse_qs(parsed.query)
 
-                return response.json({"message": "Updated"})
+        start = query.get("start", [None])[0]
+        end = query.get("end", [None])[0]
+        ctype = query.get("type", [None])[0]
+        download = query.get("download", [None])[0]
 
-        return response.json({"message": "Not Found"}, status=404)
+        q = supabase.table("complaints").select("*")
 
-    except Exception as e:
-        return response.json({"error": str(e)}, status=500)
+        # 📅 FILTER BY DATE
+        if start and end:
+            q = q.gte("created_at", start).lte("created_at", end)
+
+        # 📂 FILTER BY TYPE
+        if ctype and ctype != "All":
+            q = q.eq("category", ctype)
+
+        res = q.execute()
+        data = res.data
+
+        # 📥 EXCEL DOWNLOAD
+        if download == "excel":
+            df = pd.DataFrame(data)
+            output = BytesIO()
+            df.to_excel(output, index=False)
+            output.seek(0)
+
+            self.send_response(200)
+            self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            self.send_header("Content-Disposition", "attachment; filename=complaints.xlsx")
+            self.end_headers()
+            self.wfile.write(output.read())
+            return
+
+        return self.respond(data)
+
+    def respond(self, data, status=200):
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode())
