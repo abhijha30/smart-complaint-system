@@ -1,25 +1,21 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Smart Complaint System</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <form id="complaintForm">
-    <h2>Register Your Complaint</h2>
+<h2>Complaint Form</h2>
 
-    <input type="text" name="name" placeholder="Full Name" required>
-    <input type="number" name="age" placeholder="Age" required>
-    <input type="email" name="email" placeholder="Email ID" required>
-    <input type="text" name="contact" placeholder="Contact Number" required>
-    <input type="text" name="designation" placeholder="Designation" required>
-    <input type="text" name="company" placeholder="Company (Optional)">
-    <textarea name="complaint" placeholder="Write your complaint..." required></textarea>
+<input id="name" placeholder="Name"><br>
+<input id="email" placeholder="Email"><br>
+<input id="contact" placeholder="Phone"><br>
+<input id="title" placeholder="Title"><br>
 
-    <button type="submit">Submit Complaint</button>
-    <p id="msg"></p>
-  </form>
+<select id="type">
+<option>Drinking Water</option>
+<option>Electricity</option>
+<option>Cleanliness</option>
+<option>Security</option>
+<option>Internet</option>
+<option>Other</option>
+</select>
 
-  <script src="script.js"></script>
-</body>
-</html>
+<textarea id="remark"></textarea>
+
+<button onclick="submit()">Submit</button>
+
+<script src="script.js"></script>
