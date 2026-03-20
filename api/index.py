@@ -1,3 +1,5 @@
+import pandas as pd
+from io import BytesIO
 from http.server import BaseHTTPRequestHandler
 import json
 from urllib.parse import parse_qs, urlparse
