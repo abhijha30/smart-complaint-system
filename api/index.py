@@ -1,3 +1,9 @@
+# Required for Vercel
+def handler(request):
+    return {
+        "statusCode": 200,
+        "body": "API is working"
+    }
 import pandas as pd
 from io import BytesIO
 from http.server import BaseHTTPRequestHandler
