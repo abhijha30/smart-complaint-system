@@ -6,71 +6,46 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def handler(request):
+def handler(request, response):
     try:
-        # -------- GET REQUESTS --------
-        if request.method == "GET":
+        path = request.path
+        method = request.method
 
-            # TRACK COMPLAINT
-            if request.path.startswith("/api/track"):
+        # -------- GET --------
+        if method == "GET":
+
+            if path.startswith("/api/track"):
                 cid = request.query.get("id")
                 res = supabase.table("complaints").select("*").eq("id", cid).execute()
+                return response.json(res.data)
 
-                return {
-                    "statusCode": 200,
-                    "body": json.dumps(res.data)
-                }
-
-            # ADMIN VIEW
-            if request.path.startswith("/api/admin"):
+            if path.startswith("/api/admin"):
                 res = supabase.table("complaints").select("*").execute()
+                return response.json(res.data)
 
-                return {
-                    "statusCode": 200,
-                    "body": json.dumps(res.data)
-                }
+        # -------- POST --------
+        if method == "POST":
+            body = request.json()
 
-        # -------- POST REQUESTS --------
-        if request.method == "POST":
-            body = json.loads(request.body)
+            if path == "/api/register":
+                supabase.table("users").insert(body).execute()
+                return response.json({"message": "Registered"})
 
-            # REGISTER
-            if request.path == "/api/register":
-                supabase.table("users").insert({
-                    "name": body["name"],
-                    "email": body["email"],
-                    "password": body["password"],
-                    "role": body.get("role", "user")
-                }).execute()
-
-                return {
-                    "statusCode": 200,
-                    "body": json.dumps({"message": "Registered"})
-                }
-
-            # LOGIN
-            if request.path == "/api/login":
+            if path == "/api/login":
                 res = supabase.table("users").select("*")\
                     .eq("email", body["email"])\
                     .eq("password", body["password"]).execute()
 
                 if res.data:
-                    return {
-                        "statusCode": 200,
-                        "body": json.dumps({
-                            "message": "Login Success",
-                            "role": res.data[0]["role"]
-                        })
-                    }
+                    return response.json({
+                        "message": "Login Success",
+                        "role": res.data[0]["role"]
+                    })
 
-                return {
-                    "statusCode": 401,
-                    "body": json.dumps({"message": "Invalid"})
-                }
+                return response.json({"message": "Invalid"}, status=401)
 
-            # SUBMIT COMPLAINT
-            if request.path == "/api/complaint":
-                res = supabase.table("complaints").insert({
+            if path == "/api/complaint":
+                supabase.table("complaints").insert({
                     "name": body["name"],
                     "user_email": body["email"],
                     "contact": body["contact"],
@@ -80,32 +55,20 @@ def handler(request):
                     "status": "Pending"
                 }).execute()
 
-                return {
-                    "statusCode": 200,
-                    "body": json.dumps({"message": "Complaint Submitted"})
-                }
+                return response.json({"message": "Submitted"})
 
-        # -------- PUT REQUEST --------
-        if request.method == "PUT":
-            body = json.loads(request.body)
+        # -------- PUT --------
+        if method == "PUT":
+            body = request.json()
 
-            if request.path == "/api/update":
+            if path == "/api/update":
                 supabase.table("complaints").update({
                     "status": body["status"]
                 }).eq("id", body["id"]).execute()
 
-                return {
-                    "statusCode": 200,
-                    "body": json.dumps({"message": "Updated"})
-                }
+                return response.json({"message": "Updated"})
 
-        return {
-            "statusCode": 404,
-            "body": json.dumps({"message": "Not Found"})
-        }
+        return response.json({"message": "Not Found"}, status=404)
 
     except Exception as e:
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": str(e)})
-        }
+        return response.json({"error": str(e)}, status=500)
