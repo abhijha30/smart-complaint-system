@@ -1,32 +1,32 @@
-const API = "/api";
+const API = "/api/hello";
 
 /* =========================
    🟢 REGISTER
 ========================= */
 function register() {
-  fetch(API + "/register", {
+  fetch(API, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      action: "register",
       name: name.value,
       email: email.value,
       password: pass.value
     })
   })
   .then(r => r.json())
-  .then(d => {
-    alert(d.message);
-  });
+  .then(d => alert(d.message));
 }
 
 /* =========================
-   🔐 LOGIN (USER + ADMIN)
+   🔐 LOGIN
 ========================= */
 function login() {
-  fetch(API + "/login", {
+  fetch(API, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
+      action: "login",
       email: lemail.value,
       password: lpass.value
     })
@@ -50,45 +50,18 @@ function login() {
    📝 SUBMIT COMPLAINT
 ========================= */
 function submit() {
-  fetch(API + "/complaint", {
+  fetch(API, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: document.getElementById("name").value,
+      action: "complaint",
       email: document.getElementById("email").value,
-      contact: document.getElementById("contact").value,
       title: document.getElementById("title").value,
-      type: document.getElementById("type").value,
-      remark: document.getElementById("remark").value
+      description: document.getElementById("remark").value
     })
   })
   .then(r => r.json())
-  .then(d => {
-    alert(d.message);
-  });
-}
-
-/* =========================
-   👤 USER VIEW OWN COMPLAINTS
-========================= */
-function myComplaints() {
-  let email = localStorage.getItem("user");
-
-  fetch(API + "/my?email=" + email)
-    .then(r => r.json())
-    .then(data => {
-      let html = "";
-      data.forEach(c => {
-        html += `
-        <div style="border:1px solid #ccc;padding:10px;margin:10px">
-          <b>${c.title}</b><br>
-          Type: ${c.type}<br>
-          Status: ${c.status}
-        </div>`;
-      });
-
-      document.getElementById("data").innerHTML = html;
-    });
+  .then(d => alert(d.message));
 }
 
 /* =========================
@@ -99,7 +72,7 @@ function load() {
   let e = document.getElementById("end").value;
   let t = document.getElementById("type").value;
 
-  fetch(`${API}/admin?start=${s}&end=${e}&type=${t}`)
+  fetch(`${API}?start=${s}&end=${e}&type=${t}`)
     .then(r => r.json())
     .then(data => {
       let html = "";
@@ -107,38 +80,15 @@ function load() {
       data.forEach(c => {
         html += `
         <div style="border:1px solid #000;padding:10px;margin:10px">
-          <b>${c.name}</b> (${c.type})<br>
-          Email: ${c.user_email}<br>
-          Title: ${c.title}<br>
-          Status: ${c.status}<br>
-
-          <button onclick="update('${c.id}','Resolved')">Resolve</button>
-          <button onclick="update('${c.id}','In Progress')">In Progress</button>
+          <b>${c.title}</b><br>
+          Category: ${c.category}<br>
+          Status: ${c.status}
         </div>
         `;
       });
 
       document.getElementById("data").innerHTML = html;
     });
-}
-
-/* =========================
-   🔄 UPDATE STATUS (ADMIN)
-========================= */
-function update(id, status) {
-  fetch(API + "/update", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      id: id,
-      status: status
-    })
-  })
-  .then(r => r.json())
-  .then(d => {
-    alert(d.message);
-    load(); // reload list
-  });
 }
 
 /* =========================
@@ -149,29 +99,28 @@ function download() {
   let e = document.getElementById("end").value;
   let t = document.getElementById("type").value;
 
-  window.open(`${API}/admin?start=${s}&end=${e}&type=${t}&download=excel`);
+  window.open(`${API}?start=${s}&end=${e}&type=${t}&download=excel`);
 }
 
 /* =========================
-   🔍 TRACK COMPLAINT BY ID
+   🔍 TRACK COMPLAINT
 ========================= */
 function track() {
   let cid = document.getElementById("cid").value;
 
-  fetch(API + "/track?id=" + cid)
+  fetch(`${API}?id=${cid}`)
     .then(r => r.json())
     .then(data => {
       if (data.length) {
         let c = data[0];
         document.getElementById("res").innerHTML = `
-          <div style="border:1px solid #ccc;padding:10px">
-            <b>Status:</b> ${c.status}<br>
-            <b>Type:</b> ${c.type}<br>
-            <b>Remark:</b> ${c.description}
+          <div>
+            Status: ${c.status}<br>
+            Category: ${c.category}
           </div>
         `;
       } else {
-        document.getElementById("res").innerHTML = "No complaint found";
+        document.getElementById("res").innerHTML = "Not found";
       }
     });
 }
