@@ -8,7 +8,7 @@ import pandas as pd
 from io import BytesIO
 
 SUPABASE_URL = "https://iawnianxqhimhtwzmmna.supabase.co"
-SUPABASE_KEY = "PASTE_YOUR_KEY"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkdm90YWpreHBveW92cWdnZ3RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5ODkzNDgsImV4cCI6MjA4OTU2NTM0OH0.lju-IlKeTbhn6D5jfZh08ePS7s32t1OBFGivt0ZNPpA"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
